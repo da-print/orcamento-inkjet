@@ -6,6 +6,7 @@ import { renderEditor } from "./editor.js";
 import { renderPropostas } from "./propostas.js";
 import { renderAprovacoes } from "./aprovacoes.js";
 import { renderUsuarios } from "./usuarios.js";
+import { renderPainel } from "./painel.js";
 import { contarPendentes } from "../api.js";
 import { LOGO_PNG_BASE64 } from "../logo.js";
 
@@ -23,6 +24,7 @@ export function renderShell(container, perfil, aoSair) {
     { id: "propostas", label: "Propostas" },
     { id: "aprovacoes", label: "Aprovações" },
   ];
+  if (temAcessoGerencial(papel)) abas.push({ id: "painel", label: "Painel" });
   if (ehGestor(papel)) {
     abas.push({ id: "editor", label: "Parâmetros (Editor)" });
     abas.push({ id: "usuarios", label: "Usuários" });
@@ -75,6 +77,8 @@ export function renderShell(container, perfil, aoSair) {
       renderEditor(limpar(conteudo), perfil).catch(erroCard);
     } else if (abaAtual === "usuarios") {
       renderUsuarios(limpar(conteudo), perfil).catch(erroCard);
+    } else if (abaAtual === "painel") {
+      renderPainel(limpar(conteudo), perfil).catch(erroCard);
     }
   }
 

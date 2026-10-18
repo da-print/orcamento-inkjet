@@ -171,6 +171,13 @@ export async function contarPendentes() {
   return data || 0;
 }
 
+// ---------- Painel gerencial (gestor/visualizador; trava no banco) ----------
+export async function painelGestor(desde) {
+  const { data, error } = await supabase.rpc("painel_gestor", { p_desde: desde || null });
+  if (error) throw error;
+  return data;
+}
+
 // ---------- Usuários (somente gestor; a trava real está no banco) ----------
 export async function criarUsuario({ email, nome, senha, papel, contato }) {
   const { data, error } = await supabase.rpc("admin_criar_usuario", {
