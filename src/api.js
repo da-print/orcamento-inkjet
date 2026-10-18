@@ -179,6 +179,13 @@ export async function contarPendentes() {
   return data || 0;
 }
 
+// ---------- Backup (somente gestor; trava no banco) ----------
+export async function exportarBackup() {
+  const { data, error } = await supabase.rpc("exportar_backup");
+  if (error) throw error;
+  return data;
+}
+
 // ---------- Painel gerencial (gestor/visualizador; trava no banco) ----------
 export async function painelGestor(desde) {
   const { data, error } = await supabase.rpc("painel_gestor", { p_desde: desde || null });

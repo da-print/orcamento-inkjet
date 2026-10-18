@@ -1,7 +1,7 @@
 import { el, limpar, toast, msgErro } from "../ui.js";
 import { fmtBRL } from "../format.js";
 import {
-  carregarParametros, salvarConfig, salvarMaquina, salvarEstado, salvarColecao,
+  carregarParametros, salvarConfig, salvarMaquina, salvarEstado, salvarColecao, exportarBackup,
 } from "../api.js";
 
 // Editor de parâmetros — visível só para o gestor (a aba é gated no shell e a RLS
@@ -23,6 +23,28 @@ export async function renderEditor(container, _perfil) {
 
   const raiz = el("div", { class: "orcamento" });
   container.appendChild(raiz);
+
+  // ---- Backup ----
+  const btnBackup = el("button", { class: "btn btn-ghost sm", style: "margin-top:0;" }, "Baixar backup (JSON)");
+  btnBackup.addEventListener("click", async () => {
+    btnBackup.disabled = true; btnBackup.textContent = "Gerando…";
+    try {
+      const dados = await exportarBackup();
+      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "backup-inkjet-" + new Date().toISOString().slice(0, 10) + ".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast("Backup gerado. Guarde o arquivo em local seguro.", "ok");
+    } catch (e) { toast(msgErro(e), "erro"); }
+    finally { btnBackup.disabled = false; btnBackup.textContent = "Baixar backup (JSON)"; }
+  });
+  raiz.appendChild(secao("Backup", el("div", {}, [
+    el("p", { class: "hint", style: "margin-top:0;" }, "Baixa um arquivo com todos os parâmetros e propostas, para guardar como cópia de segurança. Faça periodicamente."),
+    el("div", { class: "row-btns" }, [btnBackup]),
+  ])));
 
   // ---- Impostos e parâmetros fixos ----
   raiz.appendChild(secao("Impostos e parâmetros fixos", el("div", { class: "grid g3" }, [
