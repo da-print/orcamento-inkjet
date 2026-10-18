@@ -99,6 +99,7 @@ export async function calcularOrcamento(params) {
     p_estado_uf: params.estadoUf,
     p_margem_manual: params.margemManual ?? null,
     p_desconto_pct: params.descontoPct ?? null,
+    p_forma: params.forma ?? "RETANGULAR",
   });
   if (error) throw error;
   return data || [];

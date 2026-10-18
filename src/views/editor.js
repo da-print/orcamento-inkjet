@@ -30,8 +30,13 @@ export async function renderEditor(container, _perfil) {
     campoNum("IRRF/CSLL (%)", model.impostos, "irrf"),
     campoNum("Frete padrão (%)", model.impostos, "frete_padrao"),
     campoNum("Margem mínima de alerta (%)", model.impostos, "margem_minima"),
-    campoNum("Gap de altura (mm)", model.formato, "gap_altura_mm"),
+    campoNum("Gap de altura — Turo (mm)", model.formato, "gap_altura_mm"),
     campoNum("Margem de largura (mm)", model.formato, "margem_largura_mm"),
+    campoNum("Dente da troqueladora (mm)", model.formato, "dente_mm"),
+    campoNum("Dentes mín. (cilindro)", model.formato, "dentes_min"),
+    campoNum("Dentes máx. (cilindro)", model.formato, "dentes_max"),
+    campoNum("Espaçamento mín. — troqueladora (mm)", model.formato, "gap_troq_min_mm"),
+    campoNum("Espaçamento máx. — troqueladora (mm)", model.formato, "gap_troq_max_mm"),
   ])));
 
   // ---- Facas (custos) ----
@@ -103,7 +108,21 @@ export async function renderEditor(container, _perfil) {
   pintarMateriais();
 
   // ---- Facas cadastradas ----
-  const facaCard = secao("Facas cadastradas (formato → pistas)", el("div", { id: "wrap-facas" }));
+  const FORMAS_FACA = ["RETANGULAR", "QUADRADA", "REDONDA", "OVAL", "ESPECIAL"];
+  function inputForma(f) {
+    if (!f.forma) f.forma = "RETANGULAR";
+    const sel = el("select", {}, FORMAS_FACA.map((v) =>
+      el("option", f.forma === v ? { value: v, selected: "" } : { value: v }, v.charAt(0) + v.slice(1).toLowerCase())));
+    sel.value = f.forma;
+    sel.addEventListener("change", () => { f.forma = sel.value; });
+    return sel;
+  }
+  function inputDentes(f) {
+    const inp = el("input", { type: "number", min: "1", step: "1", value: f.dentes ?? "", placeholder: "menor", style: "min-width:72px;" });
+    inp.addEventListener("input", () => { f.dentes = inp.value === "" ? null : parseInt(inp.value, 10); });
+    return inp;
+  }
+  const facaCard = secao("Facas cadastradas (largura + altura + forma → pistas)", el("div", { id: "wrap-facas" }));
   raiz.appendChild(facaCard);
   function pintarFacas() {
     const wrap = limpar(facaCard.querySelector("#wrap-facas"));
@@ -114,16 +133,19 @@ export async function renderEditor(container, _perfil) {
       tbody.appendChild(el("tr", {}, [
         el("td", {}, inputNum(f, "largura_mm", "0.1")),
         el("td", {}, inputNum(f, "altura_mm", "0.1")),
+        el("td", {}, inputForma(f)),
         el("td", {}, inputNum(f, "pistas", "1")),
+        el("td", {}, inputDentes(f)),
         el("td", {}, delBtn),
       ]));
     });
     wrap.appendChild(el("table", { class: "tbl" }, [
-      el("thead", {}, el("tr", {}, ["Largura (mm)", "Altura (mm)", "Pistas", ""].map((h) => el("th", {}, h)))),
+      el("thead", {}, el("tr", {}, ["Largura (mm)", "Altura (mm)", "Forma", "Pistas", "Dentes", ""].map((h) => el("th", {}, h)))),
       tbody,
     ]));
+    wrap.appendChild(el("p", { class: "hint" }, "Dentes: deixe vazio para o sistema usar o menor cilindro que encaixe; preencha para forçar um cilindro específico dessa faca."));
     const add = el("button", { class: "btn btn-ghost sm", style: "margin-top:8px;" }, "+ faca");
-    add.addEventListener("click", () => { model.facasCadastradas.push({ largura_mm: 0, altura_mm: 0, pistas: 1 }); pintarFacas(); });
+    add.addEventListener("click", () => { model.facasCadastradas.push({ largura_mm: 0, altura_mm: 0, pistas: 1, forma: "RETANGULAR", dentes: null }); pintarFacas(); });
     wrap.appendChild(add);
   }
   pintarFacas();
@@ -191,7 +213,11 @@ export async function renderEditor(container, _perfil) {
     btnSalvar.disabled = true; btnSalvar.textContent = "Salvando…";
     try {
       await salvarConfig("config_impostos", { pis_cofins: model.impostos.pis_cofins, irrf: model.impostos.irrf, frete_padrao: model.impostos.frete_padrao, margem_minima: model.impostos.margem_minima || 0 });
-      await salvarConfig("config_formato", { gap_altura_mm: model.formato.gap_altura_mm, margem_largura_mm: model.formato.margem_largura_mm });
+      await salvarConfig("config_formato", {
+        gap_altura_mm: model.formato.gap_altura_mm, margem_largura_mm: model.formato.margem_largura_mm,
+        dente_mm: model.formato.dente_mm, dentes_min: model.formato.dentes_min, dentes_max: model.formato.dentes_max,
+        gap_troq_min_mm: model.formato.gap_troq_min_mm, gap_troq_max_mm: model.formato.gap_troq_max_mm,
+      });
       await salvarConfig("config_facas", { custo_troqueladora: model.facas.custo_troqueladora, custo_turo: model.facas.custo_turo, afiacao: model.facas.afiacao });
       await salvarConfig("config_empresa", {
         razao_social: model.empresa.razao_social, cnpj: model.empresa.cnpj, ie: model.empresa.ie,

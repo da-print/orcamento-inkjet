@@ -59,6 +59,9 @@ export async function renderOrcamento(container, perfil, opts) {
   const btnRolo = el("button", { type: "button", class: "seg" }, "Rolo contínuo");
   const inPcLarg = el("input", { type: "number", min: "0", step: "0.1", value: "100" });
   const inPcAlt = el("input", { type: "number", min: "0", step: "0.1", value: "150" });
+  const FORMAS = ["RETANGULAR", "QUADRADA", "REDONDA", "OVAL", "ESPECIAL"];
+  const selForma = el("select", {}, FORMAS.map((f) =>
+    el("option", { value: f }, f.charAt(0) + f.slice(1).toLowerCase())));
   const inRcLarg = el("input", { type: "number", min: "0", step: "0.1", value: "100" });
   const inRcComp = el("input", { type: "number", min: "0", step: "0.1", value: "40" });
 
@@ -81,7 +84,7 @@ export async function renderOrcamento(container, perfil, opts) {
   const btnAddQtd = el("button", { type: "button", class: "btn btn-ghost sm", onclick: () => addCampoQtd() }, "+ Adicionar quantidade");
 
   const blocoPre = el("div", {}, [
-    el("div", { class: "grid g3" }, [campo("Largura (mm)", inPcLarg), campo("Altura (mm)", inPcAlt)]),
+    el("div", { class: "grid g3" }, [campo("Largura (mm)", inPcLarg), campo("Altura (mm)", inPcAlt), campo("Forma", selForma)]),
   ]);
   const blocoRolo = el("div", { style: "display:none;" }, [
     el("div", { class: "grid g3" }, [campo("Largura (mm)", inRcLarg), campo("Comprimento do rolo (m)", inRcComp)]),
@@ -194,9 +197,10 @@ export async function renderOrcamento(container, perfil, opts) {
       const continuidade = chkCont.checked;
       const meses = continuidade ? (parseInt(inMeses.value, 10) || 1) : null;
       const comissao = parseFloat(inComissao.value) || 0;
+      const forma = tipo === "pre-cortada" ? selForma.value : "RETANGULAR";
       const baseReq = {
         tipo, materialId: selMaterial.value, larguraMm, alturaMm, comprimentoM,
-        quantidades: qtds, continuidade, meses, comissao, estadoUf: selEstado.value,
+        quantidades: qtds, continuidade, meses, comissao, estadoUf: selEstado.value, forma,
       };
 
       // Ajuste de preço do gestor (automático / margem / desconto / preço-alvo)
@@ -223,7 +227,7 @@ export async function renderOrcamento(container, perfil, opts) {
 
       // enriquece cada resultado com contexto para render/pdf/gravação
       ultimosResultados = resultados.map((r) => ({
-        ...r, tipo, descricaoFormato,
+        ...r, tipo, descricaoFormato, forma,
         materialDescricao: material ? material.descricao : "", materialId: selMaterial.value,
         estadoNome: estado ? estado.nome : "", estadoUf: selEstado.value,
         larguraMm, alturaMm, comprimentoM, continuidade, meses, comissao, margemManual, descontoPct,
@@ -255,6 +259,11 @@ export async function renderOrcamento(container, perfil, opts) {
         (r.continuidade ? " · faca diluída em " + r.meses + " meses" : "") +
         "<br>Com IPI (" + fmtPct(r.ipi) + "): <strong>" + fmtBRL(r.preco_com_ipi) + "</strong>" }),
     ]));
+
+    // Aviso de roteamento (ex.: sem cilindro de troqueladora → Turo)
+    if (r.aviso) {
+      cardResultado.appendChild(el("div", { class: "erro-box", style: "margin-top:12px;", html: "⚠️ " + r.aviso }));
+    }
 
     // Aviso de margem mínima (gestor): quando o desconto/margem derruba abaixo do piso
     if (gestor && margemMinima > 0 && r.margem != null && r.margem < margemMinima) {
@@ -323,6 +332,12 @@ export async function renderOrcamento(container, perfil, opts) {
       info.appendChild(el("div", { class: "hint" },
         pi.pistas + " pista(s) na " + maqNome + " — bobina cortada em " + pi.basePadraoMm +
         "mm (ocupando " + pi.larguraCalculadaMm + "mm) da bobina mãe de " + pi.bobina_mae + "mm."));
+    }
+    if (r.cilindro) {
+      const c = r.cilindro;
+      info.appendChild(el("div", { class: "hint", html:
+        "Cilindro da troqueladora: <b>" + c.dentes + " dentes</b> · " + c.repeticoes + " repetição(ões) · " +
+        "espaçamento " + fmtNum(c.gap_mm, 3) + "mm" + (c.forcado ? " (dente definido na faca)" : "") }));
     }
     if (r.detalhe) {
       const d = r.detalhe;
@@ -396,7 +411,7 @@ export async function renderOrcamento(container, perfil, opts) {
     if (!ultimosResultados.length) { toast("Calcule o orçamento antes de adicionar o item."); return; }
     const p = ultimosResultados[0];
     itensProposta.push({
-      tipo: p.tipo, descricaoFormato: p.descricaoFormato, materialDescricao: p.materialDescricao, materialId: p.materialId,
+      tipo: p.tipo, descricaoFormato: p.descricaoFormato, forma: p.forma, materialDescricao: p.materialDescricao, materialId: p.materialId,
       larguraMm: p.larguraMm, alturaMm: p.alturaMm, comprimentoM: p.comprimentoM,
       continuidade: p.continuidade, meses: p.meses, comissao: p.comissao,
       margemManual: p.margemManual, descontoPct: p.descontoPct,
@@ -419,6 +434,7 @@ export async function renderOrcamento(container, perfil, opts) {
     };
     const itens = itensProposta.map((it, i) => ({
       ordem: i + 1, tipo: it.tipo, material_id: it.materialId, descricao_formato: it.descricaoFormato,
+      forma: it.forma ?? "RETANGULAR",
       largura_mm: it.larguraMm, altura_mm: it.alturaMm, comprimento_m: it.comprimentoM,
       continuidade: it.continuidade, meses: it.meses, comissao: it.comissao,
       margem_manual: it.margemManual ?? null, desconto_pct: it.descontoPct ?? null,
@@ -451,7 +467,7 @@ export async function renderOrcamento(container, perfil, opts) {
     itensProposta.length = 0;
     (prop.itens || []).forEach((it) => {
       itensProposta.push({
-        tipo: it.tipo, descricaoFormato: it.descricao_formato, materialDescricao: it.material_descricao, materialId: it.material_id,
+        tipo: it.tipo, descricaoFormato: it.descricao_formato, forma: it.forma, materialDescricao: it.material_descricao, materialId: it.material_id,
         larguraMm: it.largura_mm, alturaMm: it.altura_mm, comprimentoM: it.comprimento_m,
         continuidade: it.continuidade, meses: it.meses, comissao: it.comissao,
         margemManual: it.margem_manual, descontoPct: it.desconto_pct,
