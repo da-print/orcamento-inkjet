@@ -58,8 +58,8 @@ export function ehGestor(papel) {
 
 // Dispara callback sempre que a sessão mudar (login/logout/refresh).
 export function aoMudarSessao(callback) {
-  return supabase.auth.onAuthStateChange((_event, session) => {
+  return supabase.auth.onAuthStateChange((event, session) => {
     perfilCache = null;
-    callback(session);
+    callback(event, session);
   });
 }

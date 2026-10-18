@@ -10,11 +10,13 @@ const app = document.getElementById("app");
 // apenas a chamada mais recente renderiza, e o limpar(app) acontece só na hora do
 // append — evitando a duplicação do shell quando duas execuções concorrem.
 let runId = 0;
+let currentUid = null;   // usuário atualmente renderizado (para evitar re-render desnecessário)
 
 async function rotear() {
   const run = ++runId;
   const session = await getSession();
   if (run !== runId) return;
+  currentUid = session?.user?.id || null;
   if (!session) {
     limpar(app);
     renderLogin(app, rotear);
@@ -56,8 +58,13 @@ function telaSemPerfil() {
   return div;
 }
 
-// Reage a login/logout/refresh de token em qualquer aba.
-aoMudarSessao(() => rotear());
+// Reage à sessão, mas SÓ re-renderiza em login/logout real (quando o usuário muda).
+// Refresh de token e re-foco de aba disparam eventos com o mesmo usuário; nesses
+// casos não re-renderizamos, para não apagar a tela/formulário que a pessoa preencheu.
+aoMudarSessao((_event, session) => {
+  const uid = session?.user?.id || null;
+  if (uid !== currentUid) rotear();
+});
 
 rotear();
 
