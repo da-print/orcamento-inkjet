@@ -2,7 +2,7 @@
 // Objetivo: permitir instalar como app e abrir rápido/offline a "casca" do site.
 // Regras de segurança: só mexe em GET do mesmo domínio. NUNCA cacheia chamadas ao
 // Supabase (outro domínio), então dados sempre vêm frescos da rede.
-const CACHE = "inkjet-v1";
+const CACHE = "inkjet-v2";
 const CORE = ["/", "/index.html", "/manifest.webmanifest", "/icon-192.png"];
 
 self.addEventListener("install", (e) => {

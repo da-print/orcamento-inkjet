@@ -524,7 +524,20 @@ export async function renderOrcamento(container, perfil, opts) {
     const btnPdf = el("button", { class: "btn btn-ghost", style: "flex:1;min-width:160px;" }, "Gerar proposta em PDF");
     btnPdf.addEventListener("click", async () => {
       try {
-        const { gerarProposta } = await import("../pdf.js");
+        let mod;
+        try {
+          mod = await import("../pdf.js");
+        } catch (impErr) {
+          // Chunk antigo após um novo deploy: recarrega uma vez para pegar a versão nova.
+          if (!sessionStorage.getItem("pdf-reload")) {
+            try { sessionStorage.setItem("pdf-reload", "1"); } catch (_) {}
+            location.reload();
+            return;
+          }
+          throw impErr;
+        }
+        try { sessionStorage.removeItem("pdf-reload"); } catch (_) {}
+        const { gerarProposta } = mod;
         gerarProposta(itensProposta, {
           cliente: inNome.value || "(cliente não informado)",
           estadoUf: selEstado.value,

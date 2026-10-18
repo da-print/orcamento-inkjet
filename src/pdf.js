@@ -140,5 +140,8 @@ export function gerarProposta(itens, meta, empresa) {
   doc.text(emp.endereco || "", 297.5, footY, { align: "center" });
   doc.text(emp.site || "", 297.5, footY + 11, { align: "center" });
 
-  doc.save("proposta-" + (meta.cliente || "cliente").replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".pdf");
+  const nomeCliente = (meta.cliente || "Cliente").trim();
+  const sufixo = meta.numero ? " - PROPOSTA " + meta.numero : " - PROPOSTA (rascunho)";
+  const arquivo = (nomeCliente + sufixo).replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+  doc.save(arquivo + ".pdf");
 }

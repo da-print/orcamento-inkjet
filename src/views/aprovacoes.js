@@ -82,20 +82,23 @@ export async function renderAprovacoes(container, perfil, opts) {
           el("td", {}, chk),
         ]));
       } else {
-        syncMargem(l.alvo_final ?? "", l.desconto_final ?? "");
-        tbody.appendChild(el("tr", {}, [
+        if (gestor) syncMargem(l.alvo_final ?? "", l.desconto_final ?? "");
+        const cells = [
           el("td", {}, l.descricao),
           el("td", { class: "mono" }, fmtNum(l.quantidade, 0)),
           el("td", { class: "mono" }, fmtBRL(l.preco_unit_auto)),
           el("td", { class: "mono" }, l.alvo_final != null ? fmtBRL(l.alvo_final) : "—"),
           el("td", { class: "mono" }, l.desconto_final != null ? fmtPct(l.desconto_final) : "—"),
-          cellMargem,
-          el("td", {}, l.aprovado === false ? "✗" : "✓"),
-        ]));
+        ];
+        if (gestor) cells.push(cellMargem);               // margem só para gestor
+        cells.push(el("td", {}, l.aprovado === false ? "✗" : "✓"));
+        tbody.appendChild(el("tr", {}, cells));
       }
     });
 
-    const cabec = ["Descrição", "Qtde.", "Preço unit.", "Alvo (un.)", "Desc. %", "Margem c/ ajuste", pend && gestor ? "Aprovar" : "OK"];
+    const cabec = gestor
+      ? ["Descrição", "Qtde.", "Preço unit.", "Alvo (un.)", "Desc. %", "Margem c/ ajuste", pend ? "Aprovar" : "OK"]
+      : ["Descrição", "Qtde.", "Preço unit.", "Alvo (un.)", "Desc. %", "OK"];
     bloco.appendChild(el("div", { class: "tbl-scroll", style: "margin-top:10px;" }, [
       el("table", { class: "tbl" }, [
         el("thead", {}, el("tr", {}, cabec.map((h) => el("th", {}, h)))),
