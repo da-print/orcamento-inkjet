@@ -30,6 +30,12 @@ export async function renderEditor(container, _perfil) {
     campoNum("IRRF/CSLL (%)", model.impostos, "irrf"),
     campoNum("Frete padrão (%)", model.impostos, "frete_padrao"),
     campoNum("Margem mínima de alerta (%)", model.impostos, "margem_minima"),
+    campoSelect("Arredondamento do preço", model.impostos, "arredondamento", [
+      { v: "real_cima", r: "Real para cima" },
+      { v: "centavo_cima", r: "Centavo para cima" },
+      { v: "real_proximo", r: "Real mais próximo" },
+      { v: "nenhum", r: "Nenhum (preço cheio)" },
+    ]),
     campoNum("Gap de altura — Turo (mm)", model.formato, "gap_altura_mm"),
     campoNum("Margem de largura (mm)", model.formato, "margem_largura_mm"),
     campoNum("Dente da troqueladora (mm)", model.formato, "dente_mm"),
@@ -212,7 +218,7 @@ export async function renderEditor(container, _perfil) {
   btnSalvar.addEventListener("click", async () => {
     btnSalvar.disabled = true; btnSalvar.textContent = "Salvando…";
     try {
-      await salvarConfig("config_impostos", { pis_cofins: model.impostos.pis_cofins, irrf: model.impostos.irrf, frete_padrao: model.impostos.frete_padrao, margem_minima: model.impostos.margem_minima || 0 });
+      await salvarConfig("config_impostos", { pis_cofins: model.impostos.pis_cofins, irrf: model.impostos.irrf, frete_padrao: model.impostos.frete_padrao, margem_minima: model.impostos.margem_minima || 0, arredondamento: model.impostos.arredondamento || "real_cima" });
       await salvarConfig("config_formato", {
         gap_altura_mm: model.formato.gap_altura_mm, margem_largura_mm: model.formato.margem_largura_mm,
         dente_mm: model.formato.dente_mm, dentes_min: model.formato.dentes_min, dentes_max: model.formato.dentes_max,
@@ -271,4 +277,12 @@ function campoNum(label, obj, key) {
 }
 function campoTxt(label, obj, key, extra) {
   return el("div", { class: "field" + (extra ? " " + extra : "") }, [el("label", {}, label), inputTxt(obj, key)]);
+}
+function campoSelect(label, obj, key, opcoes) {
+  if (obj[key] == null && opcoes.length) obj[key] = opcoes[0].v;
+  const sel = el("select", {}, opcoes.map((o) =>
+    el("option", obj[key] === o.v ? { value: o.v, selected: "" } : { value: o.v }, o.r)));
+  sel.value = obj[key];
+  sel.addEventListener("change", () => { obj[key] = sel.value; });
+  return el("div", { class: "field" }, [el("label", {}, label), sel]);
 }
