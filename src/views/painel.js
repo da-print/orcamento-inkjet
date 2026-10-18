@@ -1,5 +1,5 @@
 import { el, limpar, msgErro } from "../ui.js";
-import { fmtPct, fmtNum } from "../format.js";
+import { fmtPct, fmtNum, fmtBRL } from "../format.js";
 import { painelGestor } from "../api.js";
 
 const PERIODOS = [
@@ -53,6 +53,12 @@ export async function renderPainel(container, perfil) {
         (r.n_com_desconto || 0) + " linha(s) com desconto"),
       stat("Abaixo da margem mínima", r.pct_abaixo_minima != null ? fmtPct(r.pct_abaixo_minima) : "—",
         "mínima: " + fmtPct(r.margem_minima || 0)),
+    ]));
+
+    corpo.appendChild(el("div", { class: "grid g3", style: "margin-top:12px;" }, [
+      stat("Taxa de conversão", r.taxa_conversao != null ? fmtPct(r.taxa_conversao) : "—", "aprovadas ÷ emitidas"),
+      stat("Desfechos", (r.n_aprovadas || 0) + " / " + (r.n_reprovadas || 0) + " / " + (r.n_pendentes || 0), "aprovadas / reprovadas / pendentes"),
+      stat("Receita aprovada", r.receita_aprovada != null ? fmtBRL(r.receita_aprovada) : "—", "quantidades fechadas no período"),
     ]));
 
     // Por SDR

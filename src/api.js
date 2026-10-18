@@ -139,10 +139,18 @@ export async function obterProposta(id) {
 export async function listarPropostas() {
   const { data, error } = await supabase
     .from("propostas")
-    .select("id, numero, seq, revisao, cliente, estado_uf, status, criado_em, criado_por")
+    .select("id, numero, seq, revisao, cliente, estado_uf, status, desfecho, criado_em, criado_por")
     .order("criado_em", { ascending: false });
   if (error) throw error;
   return data || [];
+}
+
+// Marca o desfecho (pendente/aprovada/reprovada). escolhas: [{item_id, quantidade}] quando aprovada.
+export async function marcarDesfecho(id, desfecho, justificativa, escolhas) {
+  const { error } = await supabase.rpc("marcar_desfecho", {
+    p_id: id, p_desfecho: desfecho, p_justificativa: justificativa || null, p_escolhas: escolhas || null,
+  });
+  if (error) throw error;
 }
 
 // ---------- Solicitações de desconto (avaliação, por linha) ----------
