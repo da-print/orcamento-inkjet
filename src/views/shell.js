@@ -7,6 +7,7 @@ import { renderPropostas } from "./propostas.js";
 import { renderAprovacoes } from "./aprovacoes.js";
 import { renderUsuarios } from "./usuarios.js";
 import { renderPainel } from "./painel.js";
+import { renderAutoteste } from "./autoteste.js";
 import { contarPendentes } from "../api.js";
 import { LOGO_PNG_BASE64 } from "../logo.js";
 
@@ -28,6 +29,7 @@ export function renderShell(container, perfil, aoSair) {
   if (ehGestor(papel)) {
     abas.push({ id: "editor", label: "Parâmetros (Editor)" });
     abas.push({ id: "usuarios", label: "Usuários" });
+    abas.push({ id: "autoteste", label: "Autoteste" });
   }
 
   const conteudo = el("div", { class: "conteudo", id: "conteudo" });
@@ -79,6 +81,8 @@ export function renderShell(container, perfil, aoSair) {
       renderUsuarios(limpar(conteudo), perfil).catch(erroCard);
     } else if (abaAtual === "painel") {
       renderPainel(limpar(conteudo), perfil).catch(erroCard);
+    } else if (abaAtual === "autoteste") {
+      renderAutoteste(limpar(conteudo), perfil).catch(erroCard);
     }
   }
 
